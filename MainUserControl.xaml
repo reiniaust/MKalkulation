@@ -1,0 +1,76 @@
+<UserControl
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:MKalkulation"
+             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+             xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core" 
+             x:Class="MKalkulation.MainUserControl"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <dx:SimpleButton x:Name="btnExcelExport" HorizontalAlignment="Right" Width="100" Click="btnExcelExport_Click">Excel-Export</dx:SimpleButton>
+        <dxg:GridControl x:Name="gridControl" Grid.Row="1" 
+            ItemsSource="{Binding CostItems}" 
+            SelectionMode="MultipleRow" 
+            SelectedItems="{Binding Selection}"
+            CustomColumnDisplayText="GridControl_CustomColumnDisplayText" Grid.RowSpan="2">
+            <dxmvvm:Interaction.Behaviors>
+                <local:GridTimerRefreshBehavior/>
+            </dxmvvm:Interaction.Behaviors>
+            <dxg:GridControl.View>
+                <dxg:TableView 
+                    x:Name="view"
+                    ShowCheckBoxSelectorColumn="True" 
+                    ShowGroupPanel="True" 
+                    ShowTotalSummary="True" 
+                    SummaryCalculationMode="SelectedRows" 
+                    GroupSummaryDisplayMode="AlignByColumns"/>
+            </dxg:GridControl.View>
+
+
+            <dxg:GridControl.GroupSummary>
+                <dxg:GridSummaryItem FieldName="CostResult" SummaryType="Sum" DisplayFormat="#,#.##"/>
+                <dxg:GridSummaryItem FieldName="Product.AnnualQuantity" SummaryType="Min" DisplayFormat="#,#"/>
+                <dxg:GridSummaryItem FieldName="TotalCosts" SummaryType="Sum" DisplayFormat="#,#"/>
+            </dxg:GridControl.GroupSummary>
+
+            <dxg:GridControl.TotalSummary>
+                <dxg:GridSummaryItem SummaryType="Sum" FieldName="TotalCosts" DisplayFormat="#,#"/>
+            </dxg:GridControl.TotalSummary>
+
+            <dxg:GridColumn FieldName="Product.Customer.Name" Header="Kunde" GroupIndex="0"/>
+            <dxg:GridColumn FieldName="Product.WholeName" Header="Produkt" GroupIndex="1"/>
+            <dxg:GridColumn FieldName="Resource.Department.Name" Header="Bereich" GroupIndex="2"/>
+            <dxg:GridColumn FieldName="Name" Width="100"/>
+            <dxg:GridColumn FieldName="CostType.Name" Header="Kostentyp"  Width="100"/>
+            <dxg:GridColumn FieldName="Resource" Header="Ressource" Width="80">
+                <dxg:GridColumn.EditSettings>
+                    <dxe:ComboBoxEditSettings ItemsSource="{Binding Resources}"/>
+                </dxg:GridColumn.EditSettings>
+            </dxg:GridColumn>
+            <dxg:GridColumn FieldName="Tool.Name" Header="Werkzeug" Width="80"/>
+            <dxg:GridColumn FieldName="ToolParting" Header="Anteil" Width="50"/>
+            <dxg:GridColumn FieldName="QuantityPerTool" Header="Anzahl" Width="50"/>
+            <dxg:GridColumn FieldName="Resource.CostRatio" Header="Kostensatz" Width="70"/>
+            <dxg:GridColumn FieldName="Effort" Header="Aufwand" Width="60"/>
+            <dxg:GridColumn FieldName="Product.ProductionQuantity" Header="Losgröße" Width="60"/>
+            <dxg:GridColumn FieldName="CostResult" Header="Stück-Kosten" Width="80"/>
+            <dxg:GridColumn FieldName="Product.AnnualQuantity" Header="Jahresmenge"  Width="80"/>
+            <dxg:GridColumn FieldName="TotalCosts" Header="Jahreskosten" Width="100"/>
+
+
+        </dxg:GridControl>
+
+        <dx:SimpleButton Content="SimpleButton" HorizontalAlignment="Left" Height="0" Margin="88,205,0,0" VerticalAlignment="Top" Width="0" Grid.Row="1"/>
+
+    </Grid>
+</UserControl>
