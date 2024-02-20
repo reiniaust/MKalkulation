@@ -24,7 +24,7 @@ namespace MKalkulation.Model
         public int? QuantityPerTool { get; set; }
         public double? Effort { get; set; }
         public double Factor { get; set; } = 1;
-        public double Divior { get; set; } = 1;
+        public double Divisor { get; set; } = 1;
 
         /// <summary>
         /// Alternativer Arbeitsgang
@@ -40,7 +40,7 @@ namespace MKalkulation.Model
             double? result = 0;
             if (Resource != null)
             {
-                result = Resource.CostRatio * Factor;
+                result = Resource.CostRatio * Factor / Divisor;
                 if (!(Effort is null))
                 {
                     result *= Effort;
