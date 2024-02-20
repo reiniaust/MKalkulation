@@ -36,7 +36,6 @@
                     GroupSummaryDisplayMode="AlignByColumns"/>
             </dxg:GridControl.View>
 
-
             <dxg:GridControl.GroupSummary>
                 <dxg:GridSummaryItem FieldName="CostResult" SummaryType="Sum" DisplayFormat="#,#.##"/>
                 <dxg:GridSummaryItem FieldName="Product.AnnualQuantity" SummaryType="Min" DisplayFormat="#,#"/>
@@ -58,19 +57,16 @@
                 </dxg:GridColumn.EditSettings>
             </dxg:GridColumn>
             <dxg:GridColumn FieldName="Tool.Name" Header="Werkzeug" Width="80"/>
-            <dxg:GridColumn FieldName="ToolParting" Header="Anteil" Width="50"/>
-            <dxg:GridColumn FieldName="QuantityPerTool" Header="Anzahl" Width="50"/>
-            <dxg:GridColumn FieldName="Resource.CostRatio" Header="Kostensatz" Width="70"/>
             <dxg:GridColumn FieldName="Effort" Header="Aufwand" Width="60"/>
+            <dxg:GridColumn FieldName="Factor" Header="Faktor" Width="50"/>
+            <dxg:GridColumn FieldName="Divisor" Header="Divisor" Width="50"/>
+            <dxg:GridColumn FieldName="Resource.CostRatio" Header="Kostensatz" Width="70"/>
             <dxg:GridColumn FieldName="Product.ProductionQuantity" Header="Losgröße" Width="60"/>
             <dxg:GridColumn FieldName="CostResult" Header="Stück-Kosten" Width="80"/>
             <dxg:GridColumn FieldName="Product.AnnualQuantity" Header="Jahresmenge"  Width="80"/>
             <dxg:GridColumn FieldName="TotalCosts" Header="Jahreskosten" Width="100"/>
-
-
         </dxg:GridControl>
 
         <dx:SimpleButton Content="SimpleButton" HorizontalAlignment="Left" Height="0" Margin="88,205,0,0" VerticalAlignment="Top" Width="0" Grid.Row="1"/>
-
     </Grid>
 </UserControl>
