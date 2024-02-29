@@ -29,106 +29,131 @@ namespace MKalkulation
         }
         public ObservableCollection<CostItem> Selection { get; } = new ObservableCollection<CostItem>();
 
-        public List<Resource> Ressources { get; set; }
+        public List<Ressource> Ressources { get; set; }
 
         public MainViewModel() {
 
 
             List<Debitor> debitorTbl = GetDAO<Debitor>().GetTable().ToList();
-            List<Teile> teileTbl = GetDAO<Teile>().GetTable().Where(t => t.TeilGeloescht == 0 && t.KalkLos > 0 && t.FoAnlage > 0
-                //&& t.tbJahresBedarf > 0 && t.AendStandDatum >= DateTime.Today.AddYears(-5)) 
-                && t.TeileNr == 103211192)
+            List<Teile> teileTbl = GetDAO<Teile>().GetTable().Where(t => 
+                t.TeilGeloescht == 0 && t.KalkLos > 0 && t.AendStandDatum >= DateTime.Today.AddYears(-5))
+                //t.TeileNr == 103211192)
                 .ToList();
             List<I_Schmelzgruppen> schmelzGrpTbl = GetDAO<I_Schmelzgruppen>().GetTable().ToList();
-            List<Werkstoffe> tblWerkstoffe = GetDAO<Werkstoffe>().GetTable().ToList();
+            List<I_Formanlagen> tblFormAnl = GetDAO<I_Formanlagen>().GetTable().ToList() ;
+            List<I_BearbeitungsAnlagen> tblBearbAnl = GetDAO<I_BearbeitungsAnlagen>().GetTable().ToList() ;
+            List < Werkstoffe> tblWerkstoffe = GetDAO<Werkstoffe>().GetTable().ToList();
             List<Material> tblMaterial = GetDAO<Material>().GetTable().ToList();
             List<MatFzWe> tblMatFzWe = GetDAO<MatFzWe>().GetTable().ToList();
             List<Mod_Platt> tblModPlatt = GetDAO<Mod_Platt>().GetTable().ToList();
             List<ModPlattHilfsstoffe> tblModPlattHilfsstoffe = GetDAO<ModPlattHilfsstoffe>().GetTable().ToList();
+            List<Tei_Bearb> tblTeiBearb = GetDAO<Tei_Bearb>().GetTable().ToList();
 
             List<Department> departments = new List<Department>();
             departments.Add(new Department() { Id = 1, Name = "01 Metall" });
             departments.Add(new Department() { Id = 2, Name = "02 Kerne" });
             departments.Add(new Department() { Id = 3, Name = "03 Hilfsstoffe" });
             departments.Add(new Department() { Id = 4, Name = "04 Formen/Gießen" });
+            departments.Add(new Department() { Id = 5, Name = "05 Putzen" });
+            Department depBearb = new Department() { Id = 6, Name = "06 Bearbeitung" };
+            departments.Add(depBearb);
 
             List<CostType> costTypes = new List<CostType>();
             costTypes.Add(new CostType() { Id = 1, Name = "01 Material" });
             costTypes.Add(new CostType() { Id = 2, Name = "02 Rüsten" });
             costTypes.Add(new CostType() { Id = 3, Name = "03 Fertigung" });
 
-            Ressources = new List<Resource>();
+            Ressources = new List<Ressource>();
 
-            // Schmelzgruppen
-            schmelzGrpTbl.ForEach(i =>
+            // Firmenstamm-Daten einlesen
             {
-                Ressources.Add(new Resource() { Id = i.Nummer, Name = i.Material, Department = departments[0], CostType = costTypes[2], CostRatio = Math.Round((double)(i.SchmKostVar + i.SchmKostFix), 3) });
-            });
-
-            // Werkstoffe
-            tblWerkstoffe.Where(w => w.WerkstoffID != 0).ToList().ForEach(w =>
-            {
-                Ressources.Add(new Resource() { Id = w.WerkstoffID, Name = w.WerkstoffBez, Department = departments[0],
-                    CostType = costTypes[0], CostRatio = Math.Round((double)w.FesterKostensatz, 3) });
-            });
-
-            // Kern-Sandarten
-            GetDAO<I_Sandarten>().GetTable().Where(i => i.Nummer != 0).ToList().ForEach(i =>
-            {
-                Ressources.Add(new Resource() { Id = i.Nummer, Name = i.Sandart, Department = departments[1], CostType = costTypes[0], CostRatio = Math.Round((double)(i.SandKostenVar + i.SandKostenFix), 3) });
-            });
-
-            // Kernmacherei
-            GetDAO<I_KernAnlagen>().GetTable().Where(i => i.Nummer != 0).ToList().ForEach(i =>
-            {
-                Ressources.Add(new Resource() { Id = i.Nummer, Name = i.KernAnlBez, Department = departments[1], CostRatio = Math.Round((double)(i.FertigKostVar + i.FertigKostFix), 3), SettingUpTime = (double)i.RuestZeit });
-                if (i.NebenKostVar > 0) 
+                // Schmelzgruppen
+                schmelzGrpTbl.ForEach(i =>
                 {
-                    Ressources.Add(new Resource() { Id = i.Nummer, Name = "Nebenzeit", Department = departments[1], CostRatio = Math.Round((double)(i.NebenKostVar + i.FertigKostFix), 3) });
-                }
-            });
+                    Ressources.Add(new Ressource() { Id = i.Nummer, Name = i.Material, Department = departments[0], CostType = costTypes[2], CostRatio = Math.Round((double)(i.SchmKostVar + i.SchmKostFix), 3) });
+                });
 
-            // Hilfsstoffe
-            I_Matgruppe hilfsMatGrp = GetDAO<I_Matgruppe>().GetTable().ToList().Find(g => g.ZuordnungsID == 3);
-            GetDAO<I_Hilfstoffe>().GetTable().Where(i => i.NichtKalkDruck == false).ToList().ForEach(i =>
-            {
-                double? kostensatz = i.Kostensatz;
-                if (hilfsMatGrp != null)
+                // Werkstoffe
+                tblWerkstoffe.Where(w => w.WerkstoffID != 0).ToList().ForEach(w =>
                 {
-                    Material material = tblMaterial.Find(m => m.MaterialGruppe == hilfsMatGrp.MatgruppeID && m.VerknuepfNr == i.Nummer);
-                    if (material != null) 
+                    Ressources.Add(new Ressource()
                     {
-                        MatFzWe matWerte = tblMatFzWe.Find(m => m.MaterialNr == material.MaterialNr);
-                        if (matWerte.FzKalkPreis != 0)
+                        Id = w.WerkstoffID,
+                        Name = w.WerkstoffBez,
+                        Department = departments[0],
+                        CostType = costTypes[0],
+                        CostRatio = Math.Round((double)w.FesterKostensatz, 3)
+                    });
+                });
+
+                // Kern-Sandarten
+                GetDAO<I_Sandarten>().GetTable().Where(i => i.Nummer != 0).ToList().ForEach(i =>
+                {
+                    Ressources.Add(new Ressource() { Id = i.Nummer, Name = i.Sandart, Department = departments[1], CostType = costTypes[0], CostRatio = Math.Round((double)(i.SandKostenVar + i.SandKostenFix), 3) });
+                });
+
+                // Kernmacherei
+                GetDAO<I_KernAnlagen>().GetTable().Where(i => i.Nummer != 0).ToList().ForEach(i =>
+                {
+                    Ressources.Add(new Ressource() { Id = i.Nummer, Name = i.KernAnlBez, Department = departments[1], CostRatio = Math.Round((double)(i.FertigKostVar + i.FertigKostFix), 3), SettingUpTime = (double)i.RuestZeit });
+                    if (i.NebenKostVar > 0)
+                    {
+                        Ressources.Add(new Ressource() { Id = i.Nummer, Name = "Nebenzeit", Department = departments[1], CostRatio = Math.Round((double)(i.NebenKostVar + i.FertigKostFix), 3) });
+                    }
+                });
+
+                // Hilfsstoffe
+                I_Matgruppe hilfsMatGrp = GetDAO<I_Matgruppe>().GetTable().ToList().Find(g => g.ZuordnungsID == 3);
+                GetDAO<I_Hilfstoffe>().GetTable().Where(i => i.NichtKalkDruck == false).ToList().ForEach(i =>
+                {
+                    double? kostensatz = i.Kostensatz;
+                    if (hilfsMatGrp != null)
+                    {
+                        Material material = tblMaterial.Find(m => m.MaterialGruppe == hilfsMatGrp.MatgruppeID && m.VerknuepfNr == i.Nummer);
+                        if (material != null)
                         {
-                            kostensatz = matWerte.FzKalkPreis;
-                        }
-                        else
-                        {
-                            kostensatz = matWerte.FzDsPreis;
+                            MatFzWe matWerte = tblMatFzWe.Find(m => m.MaterialNr == material.MaterialNr);
+                            if (matWerte.FzKalkPreis != 0)
+                            {
+                                kostensatz = matWerte.FzKalkPreis;
+                            }
+                            else
+                            {
+                                kostensatz = matWerte.FzDsPreis;
+                            }
                         }
                     }
-                }
-                if (kostensatz == null)
-                {
-                    kostensatz = 0;
-                }
-                try
-                {
-                Ressources.Add(new Resource() { Id = i.Nummer, Name = i.Bezeichnung, Department = departments[2], CostRatio = Math.Round((double)(kostensatz), 3) });
-                }
-                catch (Exception e)
-                {
-                    MessageBox.Show(e.Message);
-                }
-            });
+                    if (kostensatz == null)
+                    {
+                        kostensatz = 0;
+                    }
+                    try
+                    {
+                        Ressources.Add(new Ressource() { Id = i.Nummer, Name = i.Bezeichnung, Department = departments[2], CostRatio = Math.Round((double)(kostensatz), 3) });
+                    }
+                    catch (Exception e)
+                    {
+                        MessageBox.Show(e.Message);
+                    }
+                });
 
-            // Formerei
-            GetDAO<I_Formanlagen>().GetTable().Where(i => i.Nummer != 0).ToList().ForEach(i =>
-            {
-                Ressources.Add(new Resource() { Id = i.Nummer, Name = "Formsand", Department = departments[3], CostType = costTypes[0], CostRatio = (double)(i.SandKostenVar + i.SandKostenFix) });
-                Ressources.Add(new Resource() { Id = i.Nummer, Name = i.FormAnlage, Department = departments[3], SettingUpTime = (double)i.RuestZeit, CostRatio = Math.Round((double)(i.FormKostenVar + i.FormKostenFix), 3) });
-            });
+                // Formerei
+                tblFormAnl.Where(i => i.Nummer != 0).ToList().ForEach(i =>
+                {
+                    double costRatio = (double)(i.SandKostenVar + i.SandKostenFix);
+                    if (costRatio > 0)
+                    {
+                        Ressources.Add(new Ressource() { Id = i.Nummer, Name = "Formsand", Department = departments[3], CostType = costTypes[0], CostRatio = costRatio });
+                    }
+                    Ressources.Add(new Ressource() { Id = i.Nummer, Name = i.FormAnlage, Department = departments[3], SettingUpTime = (double)i.RuestZeit, CostRatio = Math.Round((double)(i.FormKostenVar + i.FormKostenFix), 3) });
+                });
+
+                // I-BearbeitungsAnlagen
+                tblBearbAnl.Where(i => i.Nummer != 0).ToList().ForEach(i =>
+                {
+                    Ressources.Add(new Ressource() { Id = (int)i.Nummer, Name = i.AnlagenBezeichnung, Department = depBearb, SettingUpTime = (double)i.RuestZeit, CostRatio = Math.Round((double)(i.BearbKostenVar + i.BearbKostenFix), 3) });
+                });
+            }
 
 
             List<Tool> tools = new List<Tool>();
@@ -147,10 +172,6 @@ namespace MKalkulation
             CostItems = new ObservableCollection<CostItem>();
             teileTbl.ForEach(t =>
             {
-                // in absolate Zahlen umwandeln
-                t.GewRoh = Math.Abs((double)t.GewRoh);
-                t.GewKreislauf = Math.Abs((float)t.GewKreislauf);
-
                 int anualQuant = 0;
                 if (!(t.tbJahresBedarf is null))
                 {
@@ -176,7 +197,7 @@ namespace MKalkulation
                 {
 
                     // Metall
-                    Resource ressource = Ressources.FirstOrDefault(r => r.Department == departments[0] && r.CostType == costTypes[0] && r.Id == t.WerkstoffID);
+                    Ressource ressource = Ressources.FirstOrDefault(r => r.Department == departments[0] && r.CostType == costTypes[0] && r.Id == t.WerkstoffID);
                     if (ressource != null)
                     {
                         Werkstoffe werkstoff =tblWerkstoffe.Find(w => w.WerkstoffID == werkstoffId);
@@ -188,7 +209,7 @@ namespace MKalkulation
                             {
                                 Name = "Einsatz",
                                 Product = product,
-                                Resource = ressource,
+                                Ressource = ressource,
                                 CostType = ressource.CostType,
                                 Effort = einsatzGew,
                                 Factor = Math.Round((double)schmelzgruppe.AbbrandFaktor, 3)
@@ -197,7 +218,7 @@ namespace MKalkulation
                             {
                                 Name = "Rückwert",
                                 Product = product,
-                                Resource = ressource,
+                                Ressource = ressource,
                                 CostType = ressource.CostType,
                                 Effort = Math.Round((double)((-t.GewKreislauf) * werkstoff.Rueckwert / 100), 2)
                             });
@@ -208,7 +229,7 @@ namespace MKalkulation
                             {
                                 Name = "Schmelzen",
                                 Product = product,
-                                Resource = ressource,
+                                Ressource = ressource,
                                 CostType = ressource.CostType,
                                 Effort = einsatzGew,
                                 Factor = Math.Round((double)schmelzgruppe.AbbrandFaktor, 3)
@@ -217,42 +238,64 @@ namespace MKalkulation
                     }
 
 
+                    // Formerei / Kerne / Hilfsstoffe
                     if (t.FoAnlage != 0 & t.FoMin != 0)
                     {
                         // Formsand
                         ressource = Ressources.FirstOrDefault(r => r.Department == departments[3] && r.CostType == costTypes[0] && r.Id == t.FoAnlage);
-                        CostItems.Add(new CostItem()
+                        if (ressource != null)
                         {
-                            Name = "Stoff",
-                            Product = product,
-                            Resource = ressource,
-                            CostType = ressource.CostType,
-                            Effort = (double)t.FoSandVol
-                        });
+                            CostItems.Add(new CostItem()
+                            {
+                                Name = "Stoff",
+                                Product = product,
+                                Ressource = ressource,
+                                CostType = ressource.CostType,
+                                Effort = (double)t.FoSandVol
+                            });
+                        }
 
                         ressource = Ressources.FirstOrDefault(r => r.Department == departments[3] && r.CostType is null && r.Id == t.FoAnlage);
+                        I_Formanlagen formAnl = tblFormAnl.Find(f => f.Nummer == t.FoAnlage);
+
+                        double effort = (double)t.FoMin;
+                        double factor = 1;
+                        double divisor = 1;
+                        if (formAnl.BerechnungsArt == 4)
+                        {
+                            effort = (double)(60 / effort);
+                        }
+                        if (formAnl.BerechnungsArt == 2 || formAnl.BerechnungsArt == 4)
+                        {
+                            factor = (double)t.KastAnteilZaehl;
+                            divisor = (double)(t.KastAnteilNenn * t.AnzStKast);
+                        }
 
                         // Formen
                         CostItems.Add(new CostItem()
                         {
                             Name = "Formen/Gießen",
                             Product = product,
-                            Resource = ressource,
+                            Ressource = ressource,
                             CostType = costTypes[2],
-                            ToolParting = t.KastAnteilZaehl / t.KastAnteilNenn,
-                            QuantityPerTool = (int)t.AnzStKast,
-                            Effort = 60 / (double)t.FoMin
-                        });
+                            Factor = factor,
+                            Divisor = divisor,
+                            Effort = effort
+                        }); ;
 
                         // Rüsten
-                        CostItems.Add(new CostItem()
+                        effort = (double)(ressource.SettingUpTime + t.FoRuestMin);
+                        if (effort != 0)
                         {
-                            Name = "Rüsten",
-                            Product = product,
-                            Resource = ressource,
-                            CostType = costTypes[1],
-                            Effort = (double)(ressource.SettingUpTime + t.FoRuestMin)
-                        });
+                            CostItems.Add(new CostItem()
+                            {
+                                Name = "Rüsten",
+                                Product = product,
+                                Ressource = ressource,
+                                CostType = costTypes[1],
+                                Effort = effort
+                            }); ;
+                        }
 
                         // Kerne
                         GetDAO<Tei_Kerne>().GetTable().Where(k => k.TeileID == t.TeileID).ToList().ForEach(k =>
@@ -263,7 +306,7 @@ namespace MKalkulation
                             {
                                 Name = "K " + k.KernNr,
                                 Product = product,
-                                Resource = ressource,
+                                Ressource = ressource,
                                 CostType = costTypes[0],
                                 Effort = Math.Round((double)(k.KernGew), 2),
                                 Factor = (double)k.StueckFuer,
@@ -277,7 +320,7 @@ namespace MKalkulation
                             {
                                 Name = "K " + k.KernNr,
                                 Product = product,
-                                Resource = ressource,
+                                Ressource = ressource,
                                 CostType = costTypes[1],
                                 Effort = Math.Round((double)(ressource.SettingUpTime), 2)
                             });
@@ -287,7 +330,7 @@ namespace MKalkulation
                             {
                                 Name = "K " + k.KernNr,
                                 Product = product,
-                                Resource = ressource,
+                                Ressource = ressource,
                                 CostType = costTypes[2],
                                 Effort = Math.Round((double)k.KernMin, 2),
                                 Factor = (double)k.StueckFuer,
@@ -302,7 +345,7 @@ namespace MKalkulation
                                 {
                                     Name = "K " + k.KernNr,
                                     Product = product,
-                                    Resource = ressource,
+                                    Ressource = ressource,
                                     CostType = costTypes[2],
                                     Effort = Math.Round((double)k.NebenMin, 2),
                                     Factor = (double)k.StueckFuer,
@@ -346,7 +389,7 @@ namespace MKalkulation
                                 CostItems.Add(new CostItem()
                                 {
                                     Product = product,
-                                    Resource = ressource,
+                                    Ressource = ressource,
                                     Tool = tool,
                                     CostType = costTypes[0],
                                     Factor = (double)h.StueckFuer,
@@ -357,6 +400,40 @@ namespace MKalkulation
                         });
                     }
                 }
+
+                // Bearbeitung
+                tblTeiBearb.Where(tb => tb.TeileID == t.TeileID).ToList().ForEach(tb =>
+                {
+                    if (tb.BearbArt == 'A')
+                    {
+                        Ressource ressource = Ressources.FirstOrDefault(r => r.Department == depBearb && r.Id == tb.Nummer);
+                        string name = tb.BearbText;
+                        if (tb.BearbText.Length > 20)
+                        {
+                            name = tb.BearbText.Substring(0, 20);
+                        }
+
+                        // Rüstzeit
+                        CostItems.Add(new CostItem()
+                        {
+                            Name = name,
+                            Product = product,
+                            Ressource = ressource,
+                            CostType = costTypes[1],
+                            Effort = Math.Round((double)(ressource.SettingUpTime + tb.RuestMin), 2)
+                        });
+
+                        // Fertigung
+                        CostItems.Add(new CostItem()
+                        {
+                            Name = name,
+                            Product = product,
+                            Ressource = ressource,
+                            CostType = costTypes[2],
+                            Effort = Math.Round((double)tb.StueckMin, 2)
+                        });
+                    }
+                });
             });
 
 
